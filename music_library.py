@@ -110,11 +110,15 @@ def create_bottom_sheet(db, on_play_song, page, on_close, on_play_selected):
         disabled=True
     )
 
+    def handle_on_dismiss():
+        play_selected_button.disabled = True
+
     bottom_sheet = ft.BottomSheet(
-            on_dismiss=lambda e: print("Bottom sheet dismissed"),
+            on_dismiss=lambda e: handle_on_dismiss(),
             content=ft.Container(
                 expand=True,
                 padding=20,
+                bgcolor='red',
                 content=ft.Column(
                     [
                         ft.Row(

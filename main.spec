@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('ffmpeg', 'ffmpeg')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,6 +35,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version='C:\\Users\\Dell\\AppData\\Local\\Temp\\c086779c-ea99-4147-96cd-fc253d7cf99d',
+    version='C:\\Users\\Dell\\AppData\\Local\\Temp\\9f1ca1fd-2cc0-44e8-9d76-f7377b65b6ad',
     icon=['app_icon.ico'],
 )

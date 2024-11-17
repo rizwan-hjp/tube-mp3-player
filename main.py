@@ -36,19 +36,26 @@ class QueueManager:
         return self.current_index + 1 < len(self.queue)
 
 def main(page: ft.Page):
+    bottom_sheet = ft.BottomSheet(content=ft.Text("Waiting for download..."))
+    page.add(bottom_sheet)
+
+
     db = Database()
     audio_player = AudioPlayer()
-    youtube_downloader = YouTubeDownloader()
+    youtube_downloader = YouTubeDownloader(bottom_sheet)
     queue_manager = QueueManager()
     download_cancel_flag = threading.Event()  # Add cancel flag
     remaining_time_text = ft.Text("00:00", size=16, color=ft.colors.GREEN)
-    page.title = "Professional YouTube MP3 Player"
+    page.title = "Tube Player"
     page.theme_mode = ft.ThemeMode.DARK
-    page.window_width = page.window_height = "100%"
+    page.window_width = 1210
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.padding = 0
     page.spacing = 0
+    page.window_resizable= True
+
+
 
     def play_next_song():
         next_song = queue_manager.get_next_song()
@@ -399,7 +406,7 @@ def main(page: ft.Page):
                 background_container,
                 ft.Column(
                     [
-                        ft.Text("Tube MP3 Player", size=30, weight=ft.FontWeight.BOLD),
+                        ft.Text("Tube Player", size=30, weight=ft.FontWeight.BOLD),
                         ft.Container(height=20),
                         ft.Row(
                             [url_input, download_button],
@@ -415,6 +422,7 @@ def main(page: ft.Page):
                         ft.Container(height=20),
                         bottom_container,
                         ft.ElevatedButton("Music Library", on_click=open_bottom_sheet)
+                        
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,

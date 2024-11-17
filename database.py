@@ -35,10 +35,28 @@ class Database:
     def add_song(self, title, file_path, thumbnail, duration):
         conn = self.get_connection()
         cursor = conn.cursor()
+        
+        # Check if file_path already exists
+        cursor.execute("SELECT COUNT(*) FROM songs WHERE file_path = ?", (file_path,))
+        exists = cursor.fetchone()[0] > 0
+        
+        if exists:
+            # If exists, modify the file_path to make it unique
+            base_path = os.path.splitext(file_path)
+            counter = 1
+            while exists:
+                new_file_path = f"{base_path[0]}_{counter}{base_path[1]}"
+                cursor.execute("SELECT COUNT(*) FROM songs WHERE file_path = ?", (new_file_path,))
+                exists = cursor.fetchone()[0] > 0
+                counter += 1
+            file_path = new_file_path
+        
+        # Now insert with unique file_path
         cursor.execute('''
         INSERT INTO songs (title, file_path, thumbnail, duration)
         VALUES (?, ?, ?, ?)
         ''', (title, file_path, thumbnail, duration))
+        
         conn.commit()
         return cursor.lastrowid
 
