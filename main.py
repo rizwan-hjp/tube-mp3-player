@@ -314,6 +314,7 @@ def main(page: ft.Page):
             rename_dialog = ft.AlertDialog(
                 modal=True,
                 title=ft.Text("Rename Download"),
+                bgcolor='#17202a',
                 content=ft.Column([
                     ft.Container(height=20),
                     ft.Text("Original title: " + info['original_title']),
@@ -353,7 +354,9 @@ def main(page: ft.Page):
                     stop_button.disabled = False
                     # Clear URL field after successful download
                     url_input.value = ""
+                    
                     page.update()
+                    download_complited()
                 else:
                     raise Exception(f"File not found: {file_path}")
 
@@ -371,6 +374,11 @@ def main(page: ft.Page):
             download_button.text = "Download"  # Reset button text
             download_button.style.bgcolor = {ft.MaterialState.DEFAULT: ft.colors.BLUE}
             page.update()
+    
+    def download_complited():
+            sleep(5)
+            download_status_text.value = ''
+            page.update
 
     def handle_download_button(e):
         if download_button.text == "Download":

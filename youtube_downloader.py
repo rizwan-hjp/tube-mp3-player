@@ -76,6 +76,7 @@ class YouTubeDownloader:
             return False
 
     def sanitize_filename(self, title):
+        """Sanitize the filename to remove invalid characters."""
         title = re.sub(r'[^\x00-\x7F]+', '', title)
         title = re.sub(r'[^\w\s-]', '_', title)
         title = re.sub(r'[-\s]+', '_', title)
@@ -87,7 +88,27 @@ class YouTubeDownloader:
         self.bottom_sheet.content = ft.Text(message)
         self.bottom_sheet.open = True
 
+    def cancel_download(self):
+        """Cancel the current download if one is in progress."""
+        try:
+            # Set the cancel flag to trigger the progress hook to stop
+            self.cancel_flag = True
+            
+            # If there's an active download, stop it
+            if self.current_download:
+                try:
+                    # Attempt to abort the current download
+                    self.current_download.break_download()
+                except:
+                    pass  # Ignore any errors from breaking the download
+                
+            return True
+        except Exception as e:
+            self.show_error(f"Error cancelling download: {str(e)}")
+            return False
+
     def get_video_info(self, url):
+        """Get video information before downloading."""
         with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:
             try:
                 info = ydl.extract_info(url, download=False)
@@ -103,6 +124,7 @@ class YouTubeDownloader:
                 raise Exception(f"Error getting video info: {str(e)}")
 
     def convert_to_mp3(self, input_file):
+        """Convert downloaded file to MP3 format."""
         try:
             output_file = os.path.splitext(input_file)[0] + '.mp3'
             
@@ -151,6 +173,7 @@ class YouTubeDownloader:
             raise Exception(f"Error converting to MP3: {str(e)}")
     
     def download(self, url, progress_callback=None):
+        """Download and convert a YouTube video to MP3."""
         # Reset cancel flag at start of new download
         self.cancel_flag = False
         

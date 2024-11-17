@@ -118,12 +118,12 @@ def create_bottom_sheet(db, on_play_song, page, on_close, on_play_selected):
             content=ft.Container(
                 expand=True,
                 padding=20,
-                bgcolor='red',
+                bgcolor='#17202a',
                 content=ft.Column(
                     [
                         ft.Row(
                             controls=[
-                                ft.Text("Your Music Library", size=20, weight=ft.FontWeight.BOLD),
+                                ft.Text("Music Library", size=20, weight=ft.FontWeight.BOLD),
                                 ft.IconButton(icon=ft.icons.CLOSE, on_click=on_close),
                             ],
                             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
