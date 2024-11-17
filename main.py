@@ -6,34 +6,8 @@ import threading
 import os
 from time import sleep
 from music_library import create_bottom_sheet
+from queueManager import QueueManager
 
-class QueueManager:
-    def __init__(self):
-        self.queue = []
-        self.current_index = -1
-
-    def add_songs(self, songs):
-        self.queue.extend(songs)
-        if self.current_index == -1:
-            self.current_index = 0
-
-    def clear_queue(self):
-        self.queue = []
-        self.current_index = -1
-
-    def get_current_song(self):
-        if 0 <= self.current_index < len(self.queue):
-            return self.queue[self.current_index]
-        return None
-
-    def get_next_song(self):
-        if self.current_index + 1 < len(self.queue):
-            self.current_index += 1
-            return self.queue[self.current_index]
-        return None
-
-    def has_next_song(self):
-        return self.current_index + 1 < len(self.queue)
 
 def main(page: ft.Page):
     bottom_sheet = ft.BottomSheet(content=ft.Text("Waiting for download..."))
@@ -55,8 +29,99 @@ def main(page: ft.Page):
     page.spacing = 0
     page.window_resizable= True
 
+# add code
+ # Add new controls for loop and seeking
+    seek_slider = ft.Slider(
+        min=0,
+        max=100,
+        value=0,
+        label="Position",
+        width=400,
+        active_color=ft.colors.GREEN,
+    )
+
+    current_time_text = ft.Text("00:00", size=14)
+    total_time_text = ft.Text("00:00", size=14)
+
+    loop_button = ft.IconButton(
+        icon=ft.icons.REPEAT,
+        icon_color=ft.colors.GREY,
+        icon_size=24,
+        tooltip="No Loop"
+    )
+
+    def format_time(seconds):
+        minutes, seconds = divmod(int(seconds), 60)
+        return f"{minutes:02d}:{seconds:02d}"
+
+    def update_loop_button():
+        if queue_manager.loop_mode == 'no_loop':
+            loop_button.icon_color = ft.colors.GREY
+            loop_button.tooltip = "No Loop"
+        elif queue_manager.loop_mode == 'loop_one':
+            loop_button.icon_color = ft.colors.GREEN
+            loop_button.tooltip = "Loop One"
+        else:  # loop_all
+            loop_button.icon_color = ft.colors.BLUE
+            loop_button.tooltip = "Loop All"
+        page.update()
+
+    def toggle_loop(e):
+        modes = ['no_loop', 'loop_one', 'loop_all']
+        current_index = modes.index(queue_manager.loop_mode)
+        queue_manager.loop_mode = modes[(current_index + 1) % len(modes)]
+        update_loop_button()
+        # Update next button state based on loop mode
+        next_button.disabled = not queue_manager.has_next_song()
+        page.update()
+
+    loop_button.on_click = toggle_loop
+
+    def on_seek_change(e):
+        if audio_player.current_file:
+            position = (e.control.value / 100) * total_duration
+            audio_player.seek(position)
+            audio_player.resume()
+
+    def on_drag(e):
+        audio_player.pause()
+        print('focus')
+
+    seek_slider.on_change_start = on_drag
+    # seek_slider.on_blur = on_blur
+
+    seek_slider.on_change_end = on_seek_change
+    def on_position_update(position):
+        """Update the UI components based on the current playback position."""
+
+        if audio_player.current_file:
+            # Update the seek slider value based on the current position
+            seek_slider.value = (position / total_duration) * 100 if total_duration > 0 else 0
+            current_time_text.value = format_time(position)
+            
+            # Calculate and update the remaining time
+            remaining_time = total_duration - position
+            remaining_time_text.value = f"Remaining: {format_time(remaining_time)}"
+            total_time_text.value = format_time(remaining_time)
+        else:
+            # Reset UI components when no file is playing
+            seek_slider.value = 0
+            current_time_text.value = "00:00"
+            remaining_time_text.value = "Remaining: 00:00"
+        
+        # Ensure UI updates are reflected
+        page.update()
+
+    def on_duration(duration):
+        global total_duration
+        total_duration = duration
+        # total_time_text.value = format_time(duration)
+       
 
 
+# add code
+
+    # Update play_next_song function to handle looping
     def play_next_song():
         next_song = queue_manager.get_next_song()
         if next_song:
@@ -65,8 +130,13 @@ def main(page: ft.Page):
         else:
             playing_status_text.value = "End of queue."
             play_button.icon = ft.icons.PLAY_ARROW
+            now_playing_text.value = ""
+            stop_button.disabled = True
+            next_button.disabled = True
+            prev_button.disabled = True
             page.update()
 
+    # Update the song completion callback
     def on_song_complete():
         if queue_manager.has_next_song():
             play_next_song()
@@ -77,22 +147,24 @@ def main(page: ft.Page):
             stop_button.disabled = True
             next_button.disabled = True
             prev_button.disabled = True
+            seek_slider.value = 0
         page.update()
 
-    def on_duration(duration):
-        global total_duration
-        total_duration = duration
+    # def on_duration(duration):
+    #     global total_duration
+    #     total_duration = duration
 
-    def on_position_update(position):
-        global total_duration
-        remaining_time = total_duration - position
-        minutes, seconds = divmod(remaining_time, 60)
-        remaining_time_text.value = f"Remaining: {int(minutes):02}:{int(seconds):02}"
+    # def on_position_update(position):
+    #     global total_duration
+    #     remaining_time = total_duration - position
+    #     minutes, seconds = divmod(remaining_time, 60)
+    #     remaining_time_text.value = f"Remaining: {int(minutes):02}:{int(seconds):02}"
         
-        if not audio_player.playing:
-            remaining_time_text.value = f"Remaining: {int(00):02}:{int(00):02}"
-        page.update()
+    #     if not audio_player.playing:
+    #         remaining_time_text.value = f"Remaining: {int(00):02}:{int(00):02}"
+    #     page.update()
 
+    # Update your existing callbacks
     audio_player.set_on_complete_callback(on_song_complete)
     audio_player.set_on_duration_callback(on_duration)
     audio_player.set_on_position_update_callback(on_position_update)
@@ -173,6 +245,7 @@ def main(page: ft.Page):
             play_button,
             stop_button,
             next_button,
+            loop_button,
             ft.Container(width=20),
             ft.Icon(name=ft.icons.VOLUME_UP),
             volume_slider,
@@ -180,9 +253,21 @@ def main(page: ft.Page):
         alignment=ft.MainAxisAlignment.CENTER
     )
 
+    # Add seeking controls row
+    seeking_row = ft.Row(
+        [
+            current_time_text,
+            seek_slider,
+            total_time_text
+        ],
+        alignment=ft.MainAxisAlignment.CENTER
+    )
+
+    # Update bottom_container to include seeking controls
     bottom_container = ft.Container(
         content=ft.Column([
             now_playing_text,
+            seeking_row,
             control_row
         ], alignment=ft.MainAxisAlignment.CENTER,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER),
@@ -425,7 +510,7 @@ def main(page: ft.Page):
                         download_status_text,
                         playing_status_text,
                         ft.Container(height=10),
-                        remaining_time_text,
+                        # remaining_time_text,
                         video_title,
                         ft.Container(height=20),
                         bottom_container,
