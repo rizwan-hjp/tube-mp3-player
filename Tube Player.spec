@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='main',
+    name='Tube Player',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -35,6 +35,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version='C:\\Users\\Dell\\AppData\\Local\\Temp\\e486e787-26a0-45e8-8e20-7d0ec327980b',
+    version='C:\\Users\\Dell\\AppData\\Local\\Temp\\8f6fbecd-859a-4eaf-a639-9a3e249a6eee',
     icon=['app_icon.ico'],
 )

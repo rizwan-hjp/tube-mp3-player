@@ -9,7 +9,15 @@ from pathlib import Path
 class YouTubeDownloader:
     def __init__(self, bottom_sheet):
         # Set downloads directory to C:/_music_
-        self.downloads_dir = "C:/_music_"
+       # Get the current working directory
+        current_dir = os.getcwd()
+
+        # Define the subfolder "_music_"
+        self.downloads_dir = os.path.join(current_dir, "_music_")
+
+        # Ensure the _music_ folder exists, if not, create it
+        if not os.path.exists(self.downloads_dir):
+            os.makedirs(self.downloads_dir)
         
         # Add cancel flag
         self.cancel_flag = False

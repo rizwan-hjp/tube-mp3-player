@@ -1,0 +1,7 @@
+{
+        "name": "Dark App",
+        "background_color": "#121212",
+        "theme_color": "#1E88E5",
+        "theme_mode": "dark",
+        "dark_background_color": "#121212"
+    }

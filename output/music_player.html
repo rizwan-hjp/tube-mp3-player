@@ -1,0 +1,81 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>your_song - Music Player</title>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        <style>
+            .audio-player {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+            .error-message {
+                display: none;
+                color: #dc2626;
+                background-color: #fee2e2;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin: 1rem 0;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 min-h-screen">
+        <div class="container mx-auto px-4 py-8">
+            <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="audio-player p-6 text-white">
+                    <div class="text-center mb-4">
+                        <h1 class="text-2xl font-bold">your_song</h1>
+                    </div>
+                    
+                    <div id="errorMessage" class="error-message"></div>
+                    
+                    <audio controls class="w-full mb-4" preload="metadata">
+                        <source src="http://192.168.0.183:8000/your_song.mp3" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                    
+                    <div id="loadingIndicator" class="text-center mb-4 hidden">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </div>
+                    
+                    <a href="http://192.168.0.183:8000/your_song.mp3" 
+                       download 
+                       class="download-btn block w-full bg-white text-indigo-600 text-center py-3 rounded-lg font-bold hover:bg-indigo-50 transition duration-300">
+                        <i class="fas fa-download mr-2"></i>Download Song
+                    </a>
+                </div>
+            </div>
+        </div>
+        <script>
+            const audio = document.querySelector('audio');
+            const errorMessage = document.getElementById('errorMessage');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            
+            // Show loading indicator
+            loadingIndicator.classList.remove('hidden');
+            
+            // Handle successful loading
+            audio.addEventListener('loadeddata', function() {
+                loadingIndicator.classList.add('hidden');
+                console.log('Audio loaded successfully');
+            });
+            
+            // Handle loading errors
+            audio.addEventListener('error', function(e) {
+                loadingIndicator.classList.add('hidden');
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'Error loading audio file. Please try refreshing the page.';
+                console.error('Audio loading error:', e);
+            });
+            
+            // Handle network errors
+            window.addEventListener('offline', function() {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'No internet connection. Please check your connection and try again.';
+            });
+        </script>
+    </body>
+    </html>
+    
