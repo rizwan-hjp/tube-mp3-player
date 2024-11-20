@@ -35,6 +35,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version='C:\\Users\\Dell\\AppData\\Local\\Temp\\8f6fbecd-859a-4eaf-a639-9a3e249a6eee',
+    version='C:\\Users\\Dell\\AppData\\Local\\Temp\\b0ce0b8b-14a8-48d4-b297-92154cbc56bb',
     icon=['app_icon.ico'],
 )

@@ -9,6 +9,7 @@ from music_library import create_bottom_sheet
 from queueManager import QueueManager
 import ctypes
 from titleBar import TitleBar
+from sharemusic import ShareMusic
 
 def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK
@@ -42,7 +43,7 @@ def main(page: ft.Page):
     queue_manager = QueueManager()
     download_cancel_flag = threading.Event()  # Add cancel flag
     remaining_time_text = ft.Text("00:00", size=16, color=ft.colors.GREEN)
-
+    shareMusic = ShareMusic(page,audio_player,queue_manager,db)
 
     # add code
     # Add new controls for loop and seeking
@@ -264,7 +265,9 @@ def main(page: ft.Page):
     )
 
     def handle_play_song(file_path, thumbnail):
+  
         song_info = db.get_song_by_path(file_path)
+      
         if song_info:
             now_playing_text.value = f"Now Playing: {song_info[1]}"
         background_image.src = thumbnail
@@ -280,6 +283,7 @@ def main(page: ft.Page):
             )
             prev_button.disabled = queue_manager.current_index <= 0
             playing_status_text.value = "Playing..."
+            
             page.update()
         else:
             playing_status_text.value = "Error playing audio"
@@ -482,6 +486,9 @@ def main(page: ft.Page):
         ),
     )
 
+
+
+
     page.add(
         ft.Stack(
             expand=True,
@@ -508,6 +515,7 @@ def main(page: ft.Page):
                         ft.Container(height=20),
                         bottom_container,
                         ft.ElevatedButton("Music Library", on_click=open_bottom_sheet),
+                        shareMusic.musicShareButton
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,

@@ -3,7 +3,6 @@ from utils import format_duration
 import math
 def create_bottom_sheet(db, on_play_song, page, on_close, on_play_selected):
     selected_songs = []
-    print(on_play_selected)
     playlist_table = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("Select")),
@@ -45,13 +44,15 @@ def create_bottom_sheet(db, on_play_song, page, on_close, on_play_selected):
                 on_change=lambda e, fp=file_path, tn=thumbnail: handle_checkbox_change(e, fp, tn)
             )
             
-            play_button = ft.IconButton(
-                icon=ft.icons.PLAY_CIRCLE,
-                icon_color=ft.colors.GREEN,
-                data=file_path,
-                tooltip="Play",
-                on_click=lambda e, fp=file_path, tn=thumbnail: on_play_song(fp, tn)
-            )
+            # play_button = ft.IconButton(
+            #     icon=ft.icons.PLAY_CIRCLE,
+            #     icon_color=ft.colors.GREEN,
+            #     data=file_path,
+            #     tooltip="Play",
+            #     on_click=lambda e, fp=file_path, tn=thumbnail: on_play_song(fp, tn)
+            # )
+            play_button = ft.Text('')
+
             
             delete_button = ft.IconButton(
                 icon=ft.icons.DELETE,
