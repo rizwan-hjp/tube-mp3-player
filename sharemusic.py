@@ -4,6 +4,7 @@ import qr_code_server
 import shutil
 from urllib.parse import quote
 import pathlib
+from  firewallManager import FirewallManager
 
 class ShareMusic:
     def __init__(self, page, audio_player, queue_manager, db):
@@ -11,7 +12,9 @@ class ShareMusic:
         self.single_play = audio_player
         self.db = db
         self.queue_manager = queue_manager
-        
+        self.firewall_manager = FirewallManager()
+        # self.port = 8000
+        # self.firewall_checker = FirewallCheck(self.port)
         # Create necessary directories
         self.html_dir = os.path.join(os.getcwd(), "html")
         self.music_dir = os.path.join(self.html_dir, "music")
@@ -28,12 +31,167 @@ class ShareMusic:
             ft.FloatingActionButton(
                 icon=ft.icons.QR_CODE,
                 bgcolor=ft.colors.TRANSPARENT,
-                on_click=self.show_qr_code,
+                on_click=self.isfirewall_added,
             ),
             alignment=ft.alignment.bottom_right,
             margin=ft.margin.all(16),
         )
-       
+    
+    def add_firewall_rul(self, e, banner):
+        # Get the current working directory and join with 'tube player.exe'
+        current_dir = os.getcwd()  # Get current working directory
+        app_path = r"C:\users\dell\appdata\local\programs\tube player\tube player.exe"
+        app_name = f'tube player'
+        
+        # Remove the banner from the page
+        self.page.close(banner)
+        self.page.update()
+
+        # Try to add firewall rule
+        status = self.firewall_manager.add_firewall_rule(app_name, app_path)
+        
+        # If status is False, show dialog about running as admin
+        if not status:
+            # Create an alert dialog for admin rights
+# Create a medium-sized admin rights dialog with full detailed text
+            self.dialog = ft.AlertDialog(
+                modal=True,
+                title=ft.Text(
+                    "⚠️ Admin Rights Needed",
+                    color=ft.colors.AMBER_400,
+                    size=16,
+                    weight=ft.FontWeight.BOLD,
+                    text_align=ft.TextAlign.CENTER
+                ),
+                content=ft.Container(
+                    content=ft.Column([
+                        ft.Row([
+                            ft.Icon(
+                                name=ft.icons.ADMIN_PANEL_SETTINGS,
+                                color=ft.colors.BLUE_400,
+                                size=24
+                            ),
+                            ft.Container(
+                                content=ft.Text(
+                                    "The application needs to be run as an administrator to add firewall rules.",
+                                    color=ft.colors.WHITE,
+                                    size=14,
+                                    weight=ft.FontWeight.W_500,
+                                    text_align=ft.TextAlign.LEFT,
+                                ),
+                                expand=True,
+                            )
+                        ], 
+                        alignment=ft.MainAxisAlignment.START,
+                        spacing=10,
+                        expand=True),
+                        ft.Text(
+                            "Please right-click on the application and select 'Run as administrator'.",
+                            color=ft.colors.WHITE70,
+                            size=13,
+                            text_align=ft.TextAlign.LEFT,
+                        ),
+                    ], 
+                    spacing=10,
+                    horizontal_alignment=ft.CrossAxisAlignment.START),
+                    width=400,  # Increased width for longer text
+                    height=100,  # Increased height for two lines
+                    padding=ft.padding.symmetric(horizontal=20, vertical=15)
+                ),
+                actions=[
+                    ft.Container(
+                        content=ft.ElevatedButton(
+                            "Got it",
+                            color=ft.colors.WHITE,
+                            bgcolor=ft.colors.BLUE_400,
+                            style=ft.ButtonStyle(
+                                shape=ft.RoundedRectangleBorder(radius=8)
+                            ),
+                            on_click=lambda e: self.page.close(self.dialog)
+                        ),
+                        padding=ft.padding.only(bottom=15)
+                    )
+                ],
+                actions_alignment=ft.MainAxisAlignment.CENTER,
+                bgcolor=ft.colors.GREY_900,
+                title_padding=ft.padding.symmetric(vertical=15),
+                content_padding=ft.padding.all(0),
+                shape=ft.RoundedRectangleBorder(radius=8)
+            )
+            
+            # Set and open the dialog
+            self.page.open(self.dialog)
+            self.page.update()
+        
+        else:
+            # Create a compact, dark-themed success dialog
+            self.dialog = ft.AlertDialog(
+                title=ft.Text(
+                    "Firewall Rule Added!", 
+                    color=ft.colors.GREEN_300,
+                    size=16,
+                    weight=ft.FontWeight.BOLD
+                ),
+                content=ft.Row([
+                    ft.Icon(
+                        name=ft.icons.CHECK_CIRCLE_ROUNDED, 
+                        color=ft.colors.GREEN_300,
+                        size=30
+                    ),
+                    ft.Text(
+                        "Good luck & Enjoy!", 
+                        color=ft.colors.WHITE70,
+                        size=14
+                    )
+                ], 
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10),
+                actions=[
+                    ft.TextButton(
+                        "Close", 
+                        on_click=lambda e: self.page.close(self.dialog)
+                    )
+                ],
+                actions_alignment=ft.MainAxisAlignment.END,
+                bgcolor=ft.colors.GREY_900,
+                title_padding=10,
+                content_padding=10,
+                shape=ft.RoundedRectangleBorder(radius=8)
+            )
+            
+            # Set and open the dialog
+            self.page.open(self.dialog)
+            self.page.update()
+
+            
+    def isfirewall_added(self, e):
+        if not self.firewall_manager.check_firewall_rule('tube player'):
+            self.banner = ft.Banner(
+                bgcolor=ft.colors.AMBER_100,
+                leading=ft.Icon(ft.icons.WARNING_AMBER_ROUNDED, color=ft.colors.AMBER, size=40),
+                content=ft.Text(
+                    value="Firewall rule for 'Tube Player' is not added. Music cannot be played or downlaod on your mobile device.",
+                    color=ft.colors.BLACK,
+                    weight=ft.FontWeight.BOLD,
+                    size=16
+                ),
+                actions=[
+                    ft.TextButton(text="Yes, I want", on_click=lambda e: self.add_firewall_rul(e,self.banner)),
+                    ft.TextButton(text="cancel", on_click=lambda e: self.page.close(self.banner) ),
+                    # Optionally, you can add other actions like "Ignore" or "Cancel" here
+                ],
+            )
+            self.page.open(self.banner)  # Use `add` to display the banner
+            self.page.update()
+
+            print(self.firewall_manager.check_firewall_rule('tube player'))
+            return
+
+        self.show_qr_code(e)  # If firewall rule is added, proceed to show the QR code
+
+
+
+        
 
     def show_qr_code(self, e):
         """Show QR code in a dialog."""
@@ -61,6 +219,7 @@ class ShareMusic:
                     # ft.Text(f"Server running at: http://{self.ip_address}:8000", size=14),
                     ft.Image(src_base64=self.qr_base64, width=200, height=200),
                     ft.Text(f"Play Music on Mobile", size=20),
+                    #  ft.Text(self.firewall_checker.check_firewall_status())
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 height=self.page.height * 0.5,

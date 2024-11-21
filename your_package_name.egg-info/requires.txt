@@ -1,0 +1,7 @@
+flet
+flask
+psutil
+qrcode
+yt-dlp
+pillow
+pathlib
