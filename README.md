@@ -70,6 +70,36 @@ The source code of this app is available for download. You are welcome to:
 
 ---
 
+## Free Software License Agreement
+
+1. **Grant of License**  
+   This software ("Tube Player") is provided free of charge for personal and non-commercial use only. You may not use Tube Player for any purpose that involves selling, distributing, or monetizing music or any other content created using Tube Player. By using Tube Player, you agree to the terms outlined in this agreement.
+
+2. **Disclaimer of Warranty**  
+   TUBE PLAYER IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.  
+   IN NO EVENT SHALL THE DEVELOPER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF TUBE PLAYER.
+
+3. **Limitation of Liability**  
+   You assume full responsibility for the use of Tube Player. The developer shall not be held liable for any misuse, data loss, or damage to your system or any other consequences resulting from the use of Tube Player.
+
+4. **Prohibited Uses**  
+   You agree not to:  
+   - Use Tube Player for any unlawful or harmful activity, including but not limited to the violation of any laws, infringement of rights, or activities that may damage, disable, or harm others.  
+   - Use Tube Player for creating or selling music, or for any activity aimed at generating financial profit.
+
+5. **No Support or Updates**  
+   The developer is not obligated to provide support, updates, or bug fixes for Tube Player. Any modifications or improvements are provided solely at the developer's discretion.
+
+6. **Termination**  
+   The license is effective until terminated. You may terminate it at any time by discontinuing use of Tube Player and deleting all copies.
+
+7. **Governing Law**  
+   This license shall be governed by the laws of [Your Country/Region], without regard to its conflict of law provisions.
+
+By downloading or using Tube Player, you confirm your understanding and acceptance of these terms.
+
+---
+
 ## Feedback and Support
 
 We’d love to hear from you!  
