@@ -1,6 +1,0 @@
-setup.py
-player_tube.egg-info/PKG-INFO
-player_tube.egg-info/SOURCES.txt
-player_tube.egg-info/dependency_links.txt
-player_tube.egg-info/requires.txt
-player_tube.egg-info/top_level.txt

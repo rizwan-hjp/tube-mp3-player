@@ -3,7 +3,6 @@ import threading
 import os
 import ctypes
 from time import sleep
-
 from database import Database
 from audio_player import AudioPlayer
 from youtube_downloader import YouTubeDownloader
@@ -11,9 +10,11 @@ from music_library import create_bottom_sheet
 from queueManager import QueueManager
 from titleBar import TitleBar
 from sharemusic import ShareMusic
-
+from single_instance_checker import SingleInstanceChecker  # Import the class
+from updatebutton import UpdateButton
 
 def main(page: ft.Page):
+    
     page.theme_mode = ft.ThemeMode.DARK
     page.bgcolor = "#1E1E1E"  # Replace with your desired theme color
     # page.window_frameless = True
@@ -23,16 +24,17 @@ def main(page: ft.Page):
     screen_width = user32.GetSystemMetrics(0)
     screen_height = user32.GetSystemMetrics(1)
     # Calculate position to center the window
-    page.window_left = (screen_width - page.window_width) // 2
-    page.window_top = (screen_height - page.window_height) // 2
+    page.window.left = (screen_width - page.window.width) // 2
+    page.window.top = (screen_height - page.window.height) // 2
     page.title = "Tube Player"   
-    page.window_width = 1175
-    page.window_height=660
+    page.window.width = 1175
+    page.window.height=660
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.padding = 0
     page.spacing = 0
-    page.window_resizable = True
+    page.window.resizable = True
+    page.window.max_width =False
 
     # Create the TitleBar widget
     title_bar = TitleBar(page)
@@ -41,12 +43,13 @@ def main(page: ft.Page):
     page.add(bottom_sheet)
     db = Database()
     audio_player = AudioPlayer()
-    youtube_downloader = YouTubeDownloader(bottom_sheet)
+    youtube_downloader = YouTubeDownloader()
     queue_manager = QueueManager()
     download_cancel_flag = threading.Event()  # Add cancel flag
     remaining_time_text = ft.Text("00:00", size=16, color=ft.colors.GREEN)
     shareMusic = ShareMusic(page,audio_player,queue_manager,db)
-
+    update_button = UpdateButton(page)
+    
     # add code
     # Add new controls for loop and seeking
     seek_slider = ft.Slider(
@@ -96,6 +99,7 @@ def main(page: ft.Page):
         if audio_player.current_file:
             position = (e.control.value / 100) * total_duration
             audio_player.seek(position)
+            sleep(0.3)
             audio_player.resume()
 
     def on_drag(e):
@@ -190,11 +194,11 @@ def main(page: ft.Page):
         label="YouTube URL",
         hint_text="Paste YouTube URL here...",
         width=500,
-        bgcolor=ft.colors.SURFACE_VARIANT,
+        bgcolor=ft.colors.with_opacity(0.5,ft.colors.BLACK87)
     )
 
     progress_bar = ft.ProgressBar(width=500, visible=False)
-    download_status_text = ft.Text()
+    download_status_text = ft.Text(size=17, weight=ft.FontWeight.BOLD)
     playing_status_text = ft.Text()
     video_title = ft.Text(size=20, weight=ft.FontWeight.BOLD)
     now_playing_text = ft.Text("", size=16, color=ft.colors.GREEN)
@@ -359,7 +363,15 @@ def main(page: ft.Page):
     def update_progress(progress):
         if download_cancel_flag.is_set():
             raise Exception("Download cancelled")
+        download_status_text.value = "" 
+        progress_bar.visible = True
         progress_bar.value = progress / 100
+
+        # Check if progress is complete
+        if progress >= 100:
+            progress_bar.visible = False
+            # Optionally, you can add any additional completion logic here
+            download_status_text.value = "🛠 Converting..." 
         page.update()
 
     def download_thread(url):
@@ -371,7 +383,6 @@ def main(page: ft.Page):
             info = youtube_downloader.get_video_info(url)
 
             if download_cancel_flag.is_set():
-
                 youtube_downloader.cancel_download()
                 raise Exception("Download cancelled")
 
@@ -416,16 +427,17 @@ def main(page: ft.Page):
 
             def continue_download():
                 if download_cancel_flag.is_set():
+                    print('cancel')
                     return
 
-                download_status_text.value = "Downloading and converting..."
+                download_status_text.value = "Getting high quality audio..."
                 page.update()
 
-                file_path = youtube_downloader.download(url, update_progress)
+                file_path, thumbnail = youtube_downloader.download(url, update_progress)
 
                 if os.path.exists(file_path):
                     db.add_song(
-                        custom_title, file_path, info["thumbnail"], info["duration"]
+                        custom_title, file_path, thumbnail, info["duration"]
                     )
 
                     download_status_text.value = "Ready to play!"
@@ -443,7 +455,7 @@ def main(page: ft.Page):
             if str(e) == "Download cancelled":
                 download_status_text.value = "Download cancelled"
             else:
-                download_status_text.value = f"Error: {str(e)}"
+                download_status_text.value = "Error: There was a problem. Please try with a different URL or check your internet connection."
             play_button.disabled = True
             stop_button.disabled = True
         finally:
@@ -451,7 +463,7 @@ def main(page: ft.Page):
             url_input.disabled = False
             download_cancel_flag.clear()  # Reset cancel flag
             download_button.text = "Download"  # Reset button text
-            download_button.style.bgcolor = {ft.MaterialState.DEFAULT: ft.colors.BLUE}
+            download_button.style.bgcolor = {ft.MaterialState.DEFAULT: ft.colors.with_opacity(0.5, ft.colors.BLACK87)}
             page.update()
 
     def download_complited():
@@ -460,15 +472,16 @@ def main(page: ft.Page):
         page.update
 
     def handle_download_button(e):
+       
         if download_button.text == "Download":
             if not url_input.value:
                 download_status_text.value = "Please enter a YouTube URL"
                 page.update()
                 return
-
+            
             url_input.disabled = True
             download_button.text = "Cancel Download"
-            download_button.style.bgcolor = {ft.MaterialState.DEFAULT: ft.colors.RED}
+            download_button.style.bgcolor = {ft.MaterialState.DEFAULT: ft.colors.with_opacity(0.5, ft.colors.RED_300)}
             download_cancel_flag.clear()
             threading.Thread(
                 target=download_thread, args=(url_input.value,), daemon=True
@@ -480,17 +493,18 @@ def main(page: ft.Page):
             page.update()
 
     download_button = ft.ElevatedButton(
-        "Download",
-        on_click=handle_download_button,
-        style=ft.ButtonStyle(
-            color={ft.MaterialState.DEFAULT: ft.colors.WHITE},
-            bgcolor={ft.MaterialState.DEFAULT: ft.colors.BLUE},
-        ),
+            "Download",
+            on_click=handle_download_button,
+            style=ft.ButtonStyle(
+                color={ft.MaterialState.DEFAULT: ft.colors.WHITE},
+                bgcolor={ft.MaterialState.DEFAULT: ft.colors.with_opacity(0.5, ft.colors.BLACK87)},
+               
+            ),
+            
+            height=50 # Match button height to input field
     )
-
-
-
-
+    
+    update_button.show(),
     page.add(
         ft.Stack(
             expand=True,
@@ -498,11 +512,12 @@ def main(page: ft.Page):
             controls=[
                 background_container,
                  title_bar,
+                
                 ft.Column(
                     [
-                       
-                        ft.Text("Tube Player", size=30, weight=ft.FontWeight.BOLD),
-                        ft.Container(height=20),
+                        
+                        # ft.Text("Tube Player", size=30, weight=ft.FontWeight.BOLD),
+                        ft.Container(height=40),
                         ft.Row(
                             [url_input, download_button],
                             alignment=ft.MainAxisAlignment.CENTER,
@@ -517,22 +532,30 @@ def main(page: ft.Page):
                         ft.Container(height=20),
                         bottom_container,
                         ft.ElevatedButton("Music Library", on_click=open_bottom_sheet),
-                        shareMusic.musicShareButton
+                        shareMusic.musicShareButton,
                     ],
+                    
                     alignment=ft.MainAxisAlignment.CENTER,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     expand=True,
                 ),
+                
             ],
         )
     )
 
+
+
+   
     def page_cleanup():
         audio_player.stop()
         db.conn.close()
 
     page.on_close = page_cleanup
-
+    
 
 if __name__ == "__main__":
+    checker = SingleInstanceChecker("Tube Player")  # Use your app's title
+    sock = checker.prevent_multiple_instances()
+  
     ft.app(target=main)

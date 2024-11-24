@@ -6,3 +6,5 @@ flet pack main.py --add-data "ffmpeg;ffmpeg" --icon app_icon.ico
 
 flet pack main.py --name "Tube Player" --add-data "vlc;vlc" --add-data "ffmpeg;ffmpeg" --icon app_icon.ico
 flet pack main.py --add-data "vlc;vlc" --add-data "ffmpeg;ffmpeg" --add-data "assets;assets" --icon app_icon.ico
+
+flet pack --name "Tube Player" --product-name "Tube Player" --bundle-id "com.tubeplayer.app" main.py --icon app_icon.ico

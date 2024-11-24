@@ -9,43 +9,46 @@ vlc = None
 
 class AudioPlayer:
     def __init__(self):
-        # Get the directory where the script is located
+        # Get the directory where the script or executable is located
         if getattr(sys, 'frozen', False):
-            # If running as compiled executable
-            base_path = sys._MEIPASS
+            # If running as a packaged executable
+            base_path = os.path.dirname(sys.executable)
         else:
-            # If running as script
+            # If running as a script
             base_path = os.path.dirname(os.path.abspath(__file__))
         
-        # VLC folder will be in the same directory as the script
-        vlc_path = os.path.join(base_path, 'vlc')
+        # VLC folder in the "assets" directory next to the executable or script
+        vlc_path = os.path.join(base_path, 'assets', 'vlc')
         
-        # Ensure the path exists
+        # Ensure the VLC folder exists
         if not os.path.exists(vlc_path):
             raise Exception(f"VLC directory not found at: {vlc_path}")
 
         if sys.platform.startswith('win'):
-            # Manually load the VLC DLLs in the correct order
+            # Add VLC directory to DLL search paths
             os.add_dll_directory(vlc_path)
             
-            # First load libvlccore, then libvlc
+            # Load VLC DLLs from assets/vlc folder
             libvlccore_path = os.path.join(vlc_path, 'libvlccore.dll')
             libvlc_path = os.path.join(vlc_path, 'libvlc.dll')
             
             if not os.path.exists(libvlccore_path) or not os.path.exists(libvlc_path):
-                raise Exception("Required VLC DLLs not found")
+                raise Exception("Required VLC DLLs not found in assets/vlc folder")
             
             # Load the DLLs
             ctypes.CDLL(libvlccore_path)
             ctypes.CDLL(libvlc_path)
 
-            # Add to PATH and set plugin path
-            os.environ['PATH'] = vlc_path + os.pathsep + os.environ['PATH']
+            # Add VLC plugins path to environment
             plugin_path = os.path.join(vlc_path, 'plugins')
+            
+            # Set PATH environment variable to include VLC path for additional DLLs
+            os.environ['PATH'] = vlc_path + os.pathsep + os.environ['PATH']
         else:
-            plugin_path = os.path.join(vlc_path, 'vlc', 'plugins')
+            # Linux/Mac plugin path
+            plugin_path = os.path.join(vlc_path, 'plugins')
 
-        # Import vlc module globally after DLLs are loaded
+        # Import VLC module globally after DLLs are loaded
         global vlc
         import vlc
         

@@ -76,13 +76,16 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         # First get the file path to delete the actual file
-        cursor.execute('SELECT file_path FROM songs WHERE id = ?', (song_id,))
+        cursor.execute('SELECT file_path, thumbnail FROM songs WHERE id = ?', (song_id,))
         result = cursor.fetchone()
+       
         if result:
             file_path = result[0]
+            thumbnail = result[1]
             if os.path.exists(file_path):
                 try:
                     os.remove(file_path)
+                    os.remove(thumbnail)
                 except OSError:
                     pass  # Handle file deletion error gracefully
                     

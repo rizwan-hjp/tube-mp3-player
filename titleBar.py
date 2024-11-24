@@ -1,5 +1,6 @@
 import flet as ft
 from PayPalDonation import PayPalDonation
+from shareAndFeedback import ShareAndFeedback
 
 class TitleBar(ft.Container):
 
@@ -13,7 +14,11 @@ class TitleBar(ft.Container):
         self.donation_component = PayPalDonation(
             button_url="https://www.paypal.com/paypalme/donation4happiness",  # Replace with your hosted donation page
             )
-        
+        self.shareandfeedback = ShareAndFeedback(
+             share_url="https://tubeplayer-desk.web.app/",
+             feedback_url="https://tubeplayer-desk.web.app/",
+            )
+    
         # Window Control Functions
         def minimize_window(_):
             """Minimize the window."""
@@ -68,6 +73,8 @@ class TitleBar(ft.Container):
                                 selectable=True,
                             ),
                            self.donation_component,
+                           self.shareandfeedback,
+                           
                         ]
                     ),
                     actions=[
@@ -106,7 +113,12 @@ class TitleBar(ft.Container):
                         expand=True  # This ensures the text fills up available space
                     ),
                     ft.Container(
-                        content= self.donation_component
+                        content=ft.Row(
+                            controls=[
+                                self.donation_component,
+                                self.shareandfeedback
+                            ]
+                        ) 
                     )
                 ],
             ),

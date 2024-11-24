@@ -5,3 +5,6 @@ qrcode
 yt-dlp
 pillow
 pathlib
+python-vlc
+tempfile
+aiohttp

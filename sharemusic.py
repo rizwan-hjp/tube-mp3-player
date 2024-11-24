@@ -37,23 +37,25 @@ class ShareMusic:
             margin=ft.margin.all(16),
         )
     
-    def add_firewall_rul(self, e, banner):
+    def add_firewall_rul(self, e, banner, rule_count):
         # Get the current working directory and join with 'tube player.exe'
         current_dir = os.getcwd()  # Get current working directory
-        app_path = r"C:\users\dell\appdata\local\programs\tube player\tube player.exe"
-        app_name = f'tube player'
+        app_path = os.path.join(current_dir, 'tube player.exe')  # Join current directory with 'tube player.exe'
+        # app_path = r"C:\users\dell\appdata\local\programs\tube player\tube player.exe"
+        app_name = f'tube player.exe'
         
         # Remove the banner from the page
         self.page.close(banner)
         self.page.update()
 
         # Try to add firewall rule
-        status = self.firewall_manager.add_firewall_rule(app_name, app_path)
+        status = self.firewall_manager.add_firewall_rule(app_name, app_path, rule_count)
+     
         
         # If status is False, show dialog about running as admin
         if not status:
             # Create an alert dialog for admin rights
-# Create a medium-sized admin rights dialog with full detailed text
+            # Create a medium-sized admin rights dialog with full detailed text
             self.dialog = ft.AlertDialog(
                 modal=True,
                 title=ft.Text(
@@ -165,7 +167,12 @@ class ShareMusic:
 
             
     def isfirewall_added(self, e):
-        if not self.firewall_manager.check_firewall_rule('tube player'):
+
+        self.rule = self.firewall_manager.check_firewall_rule('tube player.exe')
+       
+        if not self.rule == True:
+
+
             self.banner = ft.Banner(
                 bgcolor=ft.colors.AMBER_100,
                 leading=ft.Icon(ft.icons.WARNING_AMBER_ROUNDED, color=ft.colors.AMBER, size=40),
@@ -176,15 +183,15 @@ class ShareMusic:
                     size=16
                 ),
                 actions=[
-                    ft.TextButton(text="Yes, I want", on_click=lambda e: self.add_firewall_rul(e,self.banner)),
-                    ft.TextButton(text="cancel", on_click=lambda e: self.page.close(self.banner) ),
+                    ft.TextButton(text="Yes, I want", on_click=lambda e: self.add_firewall_rul(e,self.banner,self.rule),style=ft.ButtonStyle(color='Green')),
+                    ft.TextButton(text="cancel", on_click=lambda e: self.page.close(self.banner),style=ft.ButtonStyle(color='red') ),
                     # Optionally, you can add other actions like "Ignore" or "Cancel" here
                 ],
             )
             self.page.open(self.banner)  # Use `add` to display the banner
             self.page.update()
 
-            print(self.firewall_manager.check_firewall_rule('tube player'))
+            # print(self.firewall_manager.check_firewall_rule('tube player.exe'))
             return
 
         self.show_qr_code(e)  # If firewall rule is added, proceed to show the QR code
