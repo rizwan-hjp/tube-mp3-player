@@ -13,6 +13,10 @@ from sharemusic import ShareMusic
 from single_instance_checker import SingleInstanceChecker  # Import the class
 from updatebutton import UpdateButton
 
+# from appwritehandler import AppwriteHandler
+from firestore_handler import FirestoreHandler
+
+
 def main(page: ft.Page):
     
     page.theme_mode = ft.ThemeMode.DARK
@@ -49,7 +53,14 @@ def main(page: ft.Page):
     remaining_time_text = ft.Text("00:00", size=16, color=ft.colors.GREEN)
     shareMusic = ShareMusic(page,audio_player,queue_manager,db)
     update_button = UpdateButton(page)
+
+    # appwritehandler = AppwriteHandler()
+    firestore_handler = FirestoreHandler()
     
+
+    
+    
+
     # add code
     # Add new controls for loop and seeking
     seek_slider = ft.Slider(
@@ -314,7 +325,9 @@ def main(page: ft.Page):
     def open_bottom_sheet(e):
         bs.update_table()
         page.open(bs)
+
         page.update()
+        
 
     def play_audio(e):
         current_song = queue_manager.get_current_song()
@@ -550,10 +563,11 @@ def main(page: ft.Page):
     def page_cleanup():
         audio_player.stop()
         db.conn.close()
-
-    page.on_close = page_cleanup
+        
+        page.on_close = page_cleanup
     
-
+    # appwritehandler.handle_first_launch()
+        firestore_handler.handle_first_launch()
 if __name__ == "__main__":
     checker = SingleInstanceChecker("Tube Player")  # Use your app's title
     sock = checker.prevent_multiple_instances()

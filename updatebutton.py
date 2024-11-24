@@ -1,10 +1,17 @@
 import flet as ft
-import asyncio
-import aiohttp
-import os
 import subprocess
+
+import ctypes
+import time
+import httpx
+import asyncio
+import os
 import tempfile
+import traceback
+
+
 from appupdate import get_latest_release
+
 
 class UpdateButton(ft.Container):
     def __init__(self, page: ft.Page, current_version: str = "3.1.0", **kwargs):
@@ -176,77 +183,154 @@ class UpdateButton(ft.Container):
         """Start the update process synchronously."""
         asyncio.run(self.perform_update(url_item))
 
+
     async def perform_update(self, url_item):
         """Perform the update process asynchronously."""
         self.page.close(self.dialog)
-        
-        # Reduced initial sleep time
         await asyncio.sleep(0.1)
 
         progress_dialog = self.UpdateProgressDialog(self.page)
         progress_dialog.create()
 
-        temp_file = os.path.join(tempfile.gettempdir(), "update_installer.exe")
+        temp_dir = tempfile.gettempdir()
+        temp_file = os.path.join(temp_dir, f"update_installer_{os.getpid()}.exe")
+        startup_script = os.path.join(temp_dir, f"run_update_{os.getpid()}.vbs")
 
         try:
-            # Configure timeout and connection settings
-            timeout = aiohttp.ClientTimeout(total=30, connect=10)
-            connector = aiohttp.TCPConnector(force_close=True, limit=0)  # limit=0 removes connection limit
+            # Configure client for GitHub API
+            client = httpx.AsyncClient(
+                timeout=httpx.Timeout(30.0),
+                follow_redirects=True,
+                headers={
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'Python-App-Updater'
+                }
+            )
+
+            # Get latest release info
+            api_url = "https://api.github.com/repos/rizwan-hjp/tube-mp3-player/releases/latest"
             
-            async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
-                async with session.get(url_item) as response:
-                    if response.status != 200:
-                        raise Exception(f"Failed to download update. HTTP status: {response.status}")
+            async with client as session:
+                # Get release information
+                release_response = await session.get(api_url)
+                if release_response.status_code != 200:
+                    raise Exception(f"Failed to get release info. Status: {release_response.status_code}")
 
-                    file_size = int(response.headers.get('content-length', 0))
-                    downloaded = 0
-                    start_time = asyncio.get_event_loop().time()
+                release_info = release_response.json()
+                latest_version = release_info['tag_name'].lstrip('v').strip()
+                print(f"Latest version from GitHub: {latest_version}")  # Debug print
 
-                    if file_size == 0:
-                        raise Exception("Content-Length is missing or zero.")
+                # Find Windows executable
+                download_url = None
+                for asset in release_info['assets']:
+                    if asset['name'].endswith('.exe'):
+                        download_url = asset['browser_download_url']
+                        break
 
-                    # Increased buffer size for faster writes
-                    with open(temp_file, 'wb', buffering=8192*1024) as f:
-                        # Increased chunk size to 1MB for better throughput
-                        chunk_size = 1024 * 1024
-                        last_progress_update = 0
-                        
-                        async for chunk in response.content.iter_chunked(chunk_size):
-                            f.write(chunk)
-                            downloaded += len(chunk)
+                if not download_url:
+                    raise ValueError("No Windows executable found in release")
 
-                            # Update progress less frequently to reduce overhead
-                            current_time = asyncio.get_event_loop().time()
-                            if current_time - last_progress_update >= 0.1:  # Update every 100ms
-                                progress = (downloaded / file_size) * 100
-                                elapsed = current_time - start_time
-                                # Convert speed to MB/s for better readability
-                                speed = (downloaded / (1024 * 1024)) / elapsed if elapsed > 0 else 0
-                                progress_dialog.update_progress(progress, f"{speed:.1f} MB/s")
-                                last_progress_update = current_time
-                                # Minimal sleep for UI responsiveness
-                                await asyncio.sleep(0.01)
+                # Retry logic for download
+                retries = 3
+                for attempt in range(retries):
+                    try:
+                        async with session.stream('GET', download_url) as response:
+                            if response.status_code != 200:
+                                raise Exception(f"Failed to download update. HTTP status: {response.status_code}")
 
-            progress_dialog.close()
+                            file_size = int(response.headers.get('content-length', 0))
+                            downloaded = 0
+                            start_time = time.time()
 
-            if os.path.getsize(temp_file) != file_size:
-                raise Exception("Download incomplete. The file size doesn't match the expected size.")
+                            if file_size == 0:
+                                raise Exception("Content-Length is missing or zero.")
 
-            # print("Download complete. Starting installer...")
-            subprocess.Popen([temp_file])
-            self.page.window_destroy()
+                            with open(temp_file, 'wb', buffering=8192*1024) as f:
+                                chunk_size = 1024 * 1024  # 1MB chunk size
+                                last_progress_update = 0
+
+                                async for chunk in response.aiter_bytes(chunk_size):
+                                    f.write(chunk)
+                                    downloaded += len(chunk)
+
+                                    # Update progress less frequently
+                                    current_time = time.time()
+                                    if current_time - last_progress_update >= 0.1:  # Update every 100ms
+                                        progress = (downloaded / file_size) * 100
+                                        elapsed = current_time - start_time
+                                        speed = (downloaded / (1024 * 1024)) / elapsed if elapsed > 0 else 0
+                                        progress_dialog.update_progress(progress, f"{speed:.1f} MB/s")
+                                        last_progress_update = current_time
+                                        await asyncio.sleep(0.01)
+
+                            # Ensure the full file was downloaded
+                            if os.path.getsize(temp_file) != file_size:
+                                raise Exception("Download incomplete. The file size doesn't match the expected size.")
+
+                            # Wait for file to be fully written
+                            await asyncio.sleep(1)
+
+                            progress_dialog.close()
+
+                            # Run the installer as admin
+                            subprocess.Popen([temp_file])
+                            await asyncio.sleep(1)
+
+                            # Close the application
+                            self.page.window_destroy()
+                            break  # Exit the retry loop if the download succeeds
+
+                    except Exception as e:
+                        print(f"Attempt {attempt + 1} failed: {e}")
+                        if attempt == retries - 1:  # If this was the last retry, raise the exception
+                            raise Exception(f"Update failed after {retries} attempts: {str(e)}")
+                        await asyncio.sleep(2)  # Wait before retrying
 
         except Exception as e:
-            # print(f"Error during update: {str(e)}")
-            progress_dialog.close()
-            # Clean up incomplete download
-            if os.path.exists(temp_file):
-                try:
-                    os.remove(temp_file)
-                except:
-                    pass
-          
+            if progress_dialog:
+                progress_dialog.close()
 
+            # Clean up incomplete download
+            for file_path in [temp_file, startup_script]:
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except Exception as cleanup_error:
+                        print(f"Error cleaning up file: {cleanup_error}")
+
+            # Log the full exception traceback for better debugging
+            print(f"Update failed: {str(e)}")
+            print("Traceback:")
+            print(traceback.format_exc())
+
+    # Helper function to get version from string
+    def get_version_tuple(version_str):
+        """Convert version string to tuple for comparison."""
+        return tuple(map(int, version_str.split('.')))
+
+
+    def is_admin():
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        except Exception:
+            return False    
+
+    def run_as_admin(cmd):
+        try:
+            if UpdateButton.is_admin():
+                return subprocess.run(
+                    cmd, 
+                    shell=False, 
+                    capture_output=True, 
+                    text=True
+                )
+            else:
+                ctypes.windll.shell32.ShellExecuteW(
+                    None, "runas", "cmd.exe", f"/c {cmd}", None, 1
+                )
+                return None
+        except Exception:
+            return None
 
     def show(self):
         """Initialize the update check process."""
