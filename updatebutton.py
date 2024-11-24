@@ -7,7 +7,7 @@ import tempfile
 from appupdate import get_latest_release
 
 class UpdateButton(ft.Container):
-    def __init__(self, page: ft.Page, current_version: str = "0.1.0", **kwargs):
+    def __init__(self, page: ft.Page, current_version: str = "3.1.0", **kwargs):
         super().__init__(**kwargs)
         self.page = page
         self.current_version = current_version
