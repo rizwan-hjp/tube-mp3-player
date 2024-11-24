@@ -154,7 +154,8 @@ class YouTubeDownloader:
                 ydl.download([url])
             
             mp3_file = self.convert_to_mp3(output_file)
-
+            # Clean up the original file
+            os.remove(output_file)
             # Download the thumbnail 
             thumbnail = self.download_thumbnail(info['thumbnail'], sanitized_title)
        
