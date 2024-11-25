@@ -16,7 +16,7 @@ class FirestoreHandler:
         
         # Hard-code the Firebase credentials JSON path
 
-        config= {}
+        config= { }
             
             
         try:

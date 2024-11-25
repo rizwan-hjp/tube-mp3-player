@@ -5,7 +5,7 @@ import shutil
 from urllib.parse import quote
 import pathlib
 from  firewallManager import FirewallManager
-
+import base64
 class ShareMusic:
     def __init__(self, page, audio_player, queue_manager, db):
         self.page = page
@@ -313,13 +313,18 @@ class ShareMusic:
 
                     # Get the filename without extension as song name
                     song_name = os.path.splitext(os.path.basename(song_path))[0].replace('_', ' ')
-                    
+                        # Replace backslashes with forward slashes
+
+                    with open(thumbnail, "rb") as image_file:
+                        base64_image = base64.b64encode(image_file.read()).decode("utf-8")
+                    # Create the data URI
+                    data_uri = f"data:image/jpeg;base64,{base64_image}"                
                     # Add song details to the HTML list
                     status = "Now Playing" if is_current else "In Queue"
                     song_items.append(
                         f"""
                         <div class="song-card">
-                            <div class="song-background" style="background-image: url('{thumbnail}');"></div>
+                            <div class="song-background" style="background-image: url('{data_uri}');"></div>
                             <div class="song-overlay">
                                 <div class="song-content">
                                     <div class="song-info">
